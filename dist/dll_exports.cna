@@ -1,0 +1,61 @@
+# Author: Justin Lucas (@the_bit_diddler)
+# Date:   November 5, 2021
+
+beacon_command_register(
+"process_exports_api",
+"process_exports_api filepath.dll",
+"Synopsis: process_exports_api help");
+
+alias process_exports_api {
+    local('$handle $args $data');
+    local('$verboseHelperString');
+
+    $handle = openf(script_resource("process_exports_api.x64.o"));
+    $data = readb($handle, -1);
+    closef($handle);
+
+    $verboseHelperString  = "";
+    $verboseHelperString .= "Options:\n";
+    $verboseHelperString .= "========\n";
+    $verboseHelperString .= "Get exported functions and ordinals:\n\tprocess_exports_api DLL_NAME.dll [all | fancy]\n\n";
+
+    if ( size(@_) == 1 || size(@_) > 4) {
+        berror($1, $verboseHelperString);
+        return;
+    }
+
+    if ( size(@_) == 2) {
+        if ( ($2 ismatch 'help') ) {
+            berror($1, $verboseHelperString);
+            return;
+        }
+        $args = bof_pack($1, "iizz", 0, 0, $2, $2);
+        beacon_inline_execute($1, $data, "getExportedDLLNamesWin32", $args);
+    }
+
+    if ( size(@_) == 3 ) {
+        if ( ($2 ismatch 'help') ) {
+            berror($1, $verboseHelperString);
+            return;
+        }
+
+        if ($2 hasmatch 'dll') {
+            local('$splitName');
+
+            $splitName = "";
+            $splitName = replace(split('\.', $2)[0], '\\\\', '/');
+
+            if (strlen($splitName) > 0) {
+                if ($3 ismatch 'fancy') {
+                    $args = bof_pack($1, "iizz", 1, 1, $2, $splitName);
+                    beacon_inline_execute($1, $data, "getExportedDLLNamesWin32", $args);
+                } else {
+                    $args = bof_pack($1, "iizz", 1, 0, $2, $splitName);
+                    beacon_inline_execute($1, $data, "getExportedDLLNamesWin32", $args);
+                }
+            } else {
+                berror($1, "Expecting a larger string.");
+            }
+        }
+    }
+}
