@@ -222,7 +222,7 @@ BOOL extraFancyTransactionDump(const char* dataToDump, int dataSize)
             NtClose(tFile);
         }
 
-        BeaconPrintf(CALLBACK_OUTPUT, "[-] NtCreateFile failed with status %lx\n", status);
+        BeaconPrintf(CALLBACK_ERROR, "RtlSetCurrentTransaction failed with status %lx\n", status);
 
         return FALSE;
     }
@@ -251,7 +251,7 @@ BOOL extraFancyTransactionDump(const char* dataToDump, int dataSize)
                 NtClose(tFile);
             }
             
-            BeaconPrintf(CALLBACK_OUTPUT, "[-] NtCreateSection failed with status %lx\n", status);
+            BeaconPrintf(CALLBACK_ERROR, "NtCreateSection failed with status %lx\n", status);
             
             return FALSE;
         }
@@ -269,7 +269,7 @@ BOOL extraFancyTransactionDump(const char* dataToDump, int dataSize)
                 NtClose(tFile);
             }
 
-            BeaconPrintf(CALLBACK_OUTPUT, "[-] NtMapViewOfSection failed with status %lx\n", status);
+            BeaconPrintf(CALLBACK_ERROR, "NtMapViewOfSection failed with status %lx\n", status);
             
             return FALSE;
         }
@@ -281,7 +281,7 @@ BOOL extraFancyTransactionDump(const char* dataToDump, int dataSize)
         downloadFileName = (char*) MSVCRT$malloc(downloadFileNameLength);
         MSVCRT$sprintf(downloadFileName, "mem:\\%d.txt", 12345);
 
-        BeaconPrintf(CALLBACK_OUTPUT, "Beginning download of transacted file!\n");
+        BeaconPrintf(CALLBACK_OUTPUT, "Checks passed, download should occur shortly!\n");
         downloadFile(downloadFileName, downloadFileNameLength, returnData, fileSize);
     }
 
@@ -312,9 +312,14 @@ void depositFormatObjectContents(formatp* pFormatStruct, WINBOOL transactionDump
     }
     else
     {
-
-        extraFancyTransactionDump(outputString, sizeOfObject);
+        BOOL dumpedResult = extraFancyTransactionDump(outputString, sizeOfObject);
+        if (dumpedResult != TRUE)
+	{
+            BeaconOutput(CALLBACK_OUTPUT, outputString, sizeOfObject);
+	}
     }
+
+    BeaconFormatFree(&formatObject);
     
     return;
 }
@@ -456,7 +461,5 @@ void getExportedDLLNamesWin32(char* args, int arglength)
         depositFormatObjectContents(&formatObject, FALSE);
     }
     
-    BeaconFormatFree(&formatObject);
-
     return;
 }
